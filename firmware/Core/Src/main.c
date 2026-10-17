@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -55,6 +56,7 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
+static void ApplyVixenChannels(const uint8_t *channels, uint16_t channel_count);
 
 /* USER CODE END PFP */
 
@@ -103,6 +105,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    uint8_t channels[VIXEN_MAX_CHANNELS];
+    uint16_t channel_count = CDC_GetReceivedFrame(channels, VIXEN_MAX_CHANNELS);
+    if (channel_count != 0U)
+    {
+      ApplyVixenChannels(channels, channel_count);
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -254,7 +263,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, USART2_EN_Pin|LED1_Pin|LED2_Pin|LED3_Pin, GPIO_PIN_RESET);
@@ -301,6 +310,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void ApplyVixenChannels(const uint8_t *channels, uint16_t channel_count)
+{
+  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, (channel_count > 0U) && (channels[0] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, (channel_count > 1U) && (channels[1] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, (channel_count > 2U) && (channels[2] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, (channel_count > 3U) && (channels[3] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, (channel_count > 4U) && (channels[4] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED6_GPIO_Port, LED6_Pin, (channel_count > 5U) && (channels[5] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED7_GPIO_Port, LED7_Pin, (channel_count > 6U) && (channels[6] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  /* The integrated PC13 LED is active-low. */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, (channel_count > 7U) && (channels[7] != 0U) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+}
 
 /* USER CODE END 4 */
 

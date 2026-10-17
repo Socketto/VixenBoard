@@ -52,6 +52,11 @@
 #define APP_RX_DATA_SIZE  1024
 #define APP_TX_DATA_SIZE  1024
 /* USER CODE BEGIN EXPORTED_DEFINES */
+/* Vixen sends: start marker, channel bytes, end marker. Increase if needed. */
+/* Raw channel data must not contain the end marker byte ('e'). */
+#define VIXEN_START_MARKER 's'
+#define VIXEN_END_MARKER 'e'
+#define VIXEN_MAX_CHANNELS 256U
 
 /* USER CODE END EXPORTED_DEFINES */
 
@@ -109,6 +114,8 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
+/* Returns the channel count, or 0 if no complete frame is ready. */
+uint16_t CDC_GetReceivedFrame(uint8_t *channels, uint16_t capacity);
 
 /* USER CODE END EXPORTED_FUNCTIONS */
 
@@ -129,4 +136,3 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 #endif
 
 #endif /* __USBD_CDC_IF_H__ */
-

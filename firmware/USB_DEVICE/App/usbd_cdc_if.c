@@ -94,6 +94,13 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+static volatile uint8_t received_frame[VIXEN_MAX_CHANNELS];
+static uint8_t receive_frame[VIXEN_MAX_CHANNELS];
+static volatile uint8_t received_frame_ready;
+static volatile uint16_t received_frame_length;
+static uint16_t receive_frame_length;
+static uint8_t receive_frame_active;
+static uint8_t receive_frame_overflow;
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -150,6 +157,12 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
+  receive_frame_active = 0U;
+  receive_frame_overflow = 0U;
+  receive_frame_length = 0U;
+  received_frame_length = 0U;
+  received_frame_ready = 0U;
+
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
@@ -259,6 +272,48 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+  for (uint32_t i = 0U; i < *Len; i++)
+  {
+    uint8_t byte = Buf[i];
+
+    if (receive_frame_active == 0U)
+    {
+      if (byte == VIXEN_START_MARKER)
+      {
+        receive_frame_active = 1U;
+        receive_frame_overflow = 0U;
+        receive_frame_length = 0U;
+      }
+      continue;
+    }
+
+    if (byte == VIXEN_END_MARKER)
+    {
+      if ((receive_frame_overflow == 0U) && (receive_frame_length != 0U))
+      {
+        for (uint16_t channel = 0U; channel < receive_frame_length; channel++)
+        {
+          received_frame[channel] = receive_frame[channel];
+        }
+        received_frame_length = receive_frame_length;
+        received_frame_ready = 1U;
+      }
+
+      receive_frame_active = 0U;
+      receive_frame_overflow = 0U;
+      receive_frame_length = 0U;
+    }
+    else if ((receive_frame_overflow == 0U) &&
+             (receive_frame_length < VIXEN_MAX_CHANNELS))
+    {
+      receive_frame[receive_frame_length++] = byte;
+    }
+    else
+    {
+      receive_frame_overflow = 1U;
+    }
+  }
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -291,6 +346,30 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+uint16_t CDC_GetReceivedFrame(uint8_t *channels, uint16_t capacity)
+{
+  uint32_t interrupt_state = __get_PRIMASK();
+  __disable_irq();
+
+  uint16_t frame_length = 0U;
+  if ((received_frame_ready != 0U) && (received_frame_length <= capacity))
+  {
+    frame_length = received_frame_length;
+    for (uint16_t channel = 0U; channel < frame_length; channel++)
+    {
+      channels[channel] = received_frame[channel];
+    }
+    received_frame_ready = 0U;
+    received_frame_length = 0U;
+  }
+
+  if (interrupt_state == 0U)
+  {
+    __enable_irq();
+  }
+
+  return frame_length;
+}
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
