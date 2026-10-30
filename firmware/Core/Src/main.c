@@ -263,7 +263,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, USART2_EN_Pin|LED1_Pin|LED2_Pin|LED3_Pin, GPIO_PIN_RESET);
@@ -319,8 +319,7 @@ static void ApplyVixenChannels(const uint8_t *channels, uint16_t channel_count)
   HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, (channel_count > 4U) && (channels[4] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED6_GPIO_Port, LED6_Pin, (channel_count > 5U) && (channels[5] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED7_GPIO_Port, LED7_Pin, (channel_count > 6U) && (channels[6] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-  /* The integrated PC13 LED is active-low. */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, (channel_count > 7U) && (channels[7] != 0U) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, (channel_count > 7U) && (channels[7] != 0U) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 /* USER CODE END 4 */
